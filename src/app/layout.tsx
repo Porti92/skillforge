@@ -1,19 +1,8 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter, Instrument_Serif } from "next/font/google";
+import { Inter, Instrument_Serif } from "next/font/google";
 import "./globals.css";
-import { VisualEditsMessenger } from "orchids-visual-edits";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Navbar } from "@/components/Navbar";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 const inter = Inter({
   variable: "--font-inter",
@@ -28,8 +17,8 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "Your idea → Prompt",
-  description: "Transform your idea into a production-ready prompt",
+  title: "SkillForge - AI Agent Skill Generator",
+  description: "Create powerful skills for your AI agents",
 };
 
 export default function RootLayout({
@@ -40,13 +29,12 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${instrumentSerif.variable} antialiased`}
+        className={`${inter.variable} ${instrumentSerif.variable} antialiased`}
       >
         <AuthProvider>
           <Navbar />
           {children}
         </AuthProvider>
-        <VisualEditsMessenger />
       </body>
     </html>
   );
