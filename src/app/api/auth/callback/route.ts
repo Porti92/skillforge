@@ -1,7 +1,16 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey);
+
 export async function GET(request: NextRequest) {
+  // If Supabase is not configured, just redirect home
+  if (!isSupabaseConfigured) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
 
@@ -9,8 +18,8 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.redirect(new URL("/auth/redirect", request.url));
 
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      supabaseUrl!,
+      supabaseAnonKey!,
       {
         cookies: {
           getAll() {

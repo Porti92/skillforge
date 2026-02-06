@@ -10,7 +10,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { User, Session } from "@supabase/supabase-js";
-import { getSupabaseClient } from "@/lib/supabase";
+import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase";
 
 interface AuthContextType {
   user: User | null;
@@ -31,6 +31,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
+    // If Supabase is not configured, skip auth and treat user as "authenticated"
+    if (!isSupabaseConfigured || !supabase) {
+      setIsLoading(false);
+      return;
+    }
+
     // Get initial session
     const getInitialSession = async () => {
       try {
@@ -63,6 +69,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [supabase]);
 
   const signInWithGoogle = useCallback(async (returnTo?: string) => {
+    if (!isSupabaseConfigured || !supabase) {
+      console.log("Auth not configured - skipping sign in");
+      return;
+    }
+
     try {
       // Store current or custom return URL to redirect back after auth
       const returnUrl = returnTo
@@ -84,6 +95,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [supabase]);
 
   const signOut = useCallback(async () => {
+    if (!isSupabaseConfigured || !supabase) {
+      console.log("Auth not configured - skipping sign out");
+      router.push("/");
+      return;
+    }
+
     try {
       // Clear all cached data
       localStorage.removeItem("prompt-architect-pending-session");
@@ -102,12 +119,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [supabase, router]);
 
+  // If Supabase is not configured, treat everyone as authenticated
+  const isAuthenticated = !isSupabaseConfigured || !!user;
+
   return (
     <AuthContext.Provider
       value={{
         user,
         session,
-        isAuthenticated: !!user,
+        isAuthenticated,
         isLoading,
         signInWithGoogle,
         signOut,

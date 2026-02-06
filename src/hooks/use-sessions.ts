@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getSupabaseClient } from "@/lib/supabase";
+import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase";
 
 export interface ChatMessage {
   role: "user" | "assistant";
@@ -63,6 +63,13 @@ export function useSessions() {
   // Also migrate any localStorage sessions to Supabase when user authenticates
   useEffect(() => {
     const loadSessions = async () => {
+      // If Supabase is not configured, always use localStorage
+      if (!isSupabaseConfigured || !supabase) {
+        loadFromLocalStorage();
+        setIsLoaded(true);
+        return;
+      }
+
       if (isAuthenticated && user) {
         try {
           // First, check if there are any localStorage sessions to migrate
@@ -105,6 +112,8 @@ export function useSessions() {
 
     // Migrate localStorage sessions to Supabase for newly authenticated users
     const migrateLocalStorageSessions = async () => {
+      if (!supabase) return;
+      
       try {
         const stored = localStorage.getItem(SESSIONS_KEY);
         if (!stored || !user) return;
@@ -155,8 +164,8 @@ export function useSessions() {
     async (description: string, spec?: string, messages?: ChatMessage[]): Promise<Session> => {
       const title = truncateTitle(description);
 
-      if (isAuthenticated && user) {
-        // Save to Supabase
+      // If Supabase is configured and user is authenticated, save to Supabase
+      if (isSupabaseConfigured && supabase && isAuthenticated && user) {
         const { data, error } = await supabase
           .from("sessions")
           .insert({
@@ -178,7 +187,7 @@ export function useSessions() {
         setSessions((prev) => [newSession, ...prev]);
         return newSession;
       } else {
-        // Save to localStorage for unauthenticated users
+        // Save to localStorage
         const newSession: Session = {
           id: generateId(),
           title,
@@ -202,7 +211,7 @@ export function useSessions() {
 
   const updateSession = useCallback(
     async (id: string, updates: Partial<Omit<Session, "id" | "createdAt">>) => {
-      if (isAuthenticated && user) {
+      if (isSupabaseConfigured && supabase && isAuthenticated && user) {
         // Update in Supabase
         const { error } = await supabase
           .from("sessions")
@@ -226,7 +235,7 @@ export function useSessions() {
         const updated = prev.map((session) =>
           session.id === id ? { ...session, ...updates } : session
         );
-        if (!isAuthenticated) {
+        if (!isSupabaseConfigured || !isAuthenticated) {
           persistToLocalStorage(updated);
         }
         return updated;
@@ -237,7 +246,7 @@ export function useSessions() {
 
   const deleteSession = useCallback(
     async (id: string) => {
-      if (isAuthenticated && user) {
+      if (isSupabaseConfigured && supabase && isAuthenticated && user) {
         // Delete from Supabase
         const { error } = await supabase
           .from("sessions")
@@ -253,7 +262,7 @@ export function useSessions() {
 
       setSessions((prev) => {
         const updated = prev.filter((session) => session.id !== id);
-        if (!isAuthenticated) {
+        if (!isSupabaseConfigured || !isAuthenticated) {
           persistToLocalStorage(updated);
         }
         return updated;
