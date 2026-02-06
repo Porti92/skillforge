@@ -1,0 +1,284 @@
+.typeset {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 32px;
+  color: #e4e4e7;
+  line-height: 1.65;
+  font-family: "Georgia", "Times New Roman", serif;
+  font-size: 17px;
+}
+
+.typeset h1,
+.typeset h2,
+.typeset h3,
+.typeset h4,
+.typeset h5,
+.typeset h6 {
+  font-family: "Georgia", "Times New Roman", serif;
+  font-weight: 600;
+  margin-top: 2em;
+  margin-bottom: 0.75em;
+  line-height: 1.3;
+  color: #fafafa;
+}
+
+.typeset h1 {
+  font-size: 2.25em;
+  border-bottom: 1px solid #27272a;
+  padding-bottom: 0.3em;
+  margin-top: 0;
+}
+
+.typeset h2 {
+  font-size: 1.75em;
+  border-bottom: 1px solid #27272a;
+  padding-bottom: 0.25em;
+}
+
+.typeset h3 {
+  font-size: 1.375em;
+  color: #d97706;
+}
+
+.typeset h4 {
+  font-size: 1.125em;
+}
+
+.typeset h5,
+.typeset h6 {
+  font-size: 1em;
+  color: #f9f9fb;
+}
+
+.typeset p {
+  margin-bottom: 1.25em;
+}
+
+.typeset a {
+  color: #f59e0b;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.typeset a:hover {
+  color: #fbbf24;
+}
+
+.typeset strong {
+  font-weight: 600;
+  color: #fafafa;
+}
+
+.typeset em {
+  font-style: italic;
+}
+
+.typeset ul,
+.typeset ol {
+  margin-bottom: 1.25em;
+  padding-left: 1.5em;
+}
+
+.typeset ul {
+  list-style-type: disc;
+}
+
+.typeset ol {
+  list-style-type: decimal;
+}
+
+.typeset li {
+  margin-bottom: 0.5em;
+}
+
+.typeset li > ul,
+.typeset li > ol {
+  margin-top: 0.5em;
+  margin-bottom: 0;
+}
+
+.typeset blockquote {
+  border-left: 3px solid #d97706;
+  padding-left: 1em;
+  margin: 1.5em 0;
+  color: #a1a1aa;
+  font-style: italic;
+}
+
+.typeset code {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+  font-size: 0.875em;
+  background: #18181b;
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  color: #f59e0b;
+}
+
+.typeset pre {
+  background: #18181b;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  padding: 1em;
+  overflow-x: auto;
+  margin: 1.5em 0;
+}
+
+.typeset pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.875em;
+  color: #e4e4e7;
+}
+
+.typeset table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5em 0;
+  font-size: 0.9375em;
+}
+
+.typeset th,
+.typeset td {
+  border: 1px solid #27272a;
+  padding: 0.75em 1em;
+  text-align: left;
+}
+
+.typeset th {
+  background: #18181b;
+  font-weight: 600;
+  color: #fafafa;
+}
+
+.typeset tr:nth-child(even) {
+  background: rgba(24, 24, 27, 0.5);
+}
+
+.typeset hr {
+  border: none;
+  border-top: 1px solid #27272a;
+  margin: 2em 0;
+}
+
+.typeset img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 1.5em 0;
+}
+
+.typeset input[type="checkbox"] {
+  margin-right: 0.5em;
+}
+
+/* Syntax highlighting - GitHub Dark style */
+.typeset .hljs {
+  color: #e4e4e7;
+}
+
+.typeset .hljs-keyword,
+.typeset .hljs-selector-tag,
+.typeset .hljs-literal,
+.typeset .hljs-section,
+.typeset .hljs-link {
+  color: #ff7b72;
+}
+
+.typeset .hljs-string,
+.typeset .hljs-title,
+.typeset .hljs-name,
+.typeset .hljs-type,
+.typeset .hljs-attribute,
+.typeset .hljs-symbol,
+.typeset .hljs-bullet,
+.typeset .hljs-addition,
+.typeset .hljs-variable,
+.typeset .hljs-template-tag,
+.typeset .hljs-template-variable {
+  color: #a5d6ff;
+}
+
+.typeset .hljs-comment,
+.typeset .hljs-quote,
+.typeset .hljs-deletion,
+.typeset .hljs-meta {
+  color: #8b949e;
+}
+
+.typeset .hljs-function,
+.typeset .hljs-params {
+  color: #d2a8ff;
+}
+
+.typeset .hljs-number {
+  color: #79c0ff;
+}
+
+/* Light mode support */
+@media (prefers-color-scheme: light) {
+  .typeset {
+    color: #e0e0e7;
+  }
+  
+  .typeset h1,
+  .typeset h2,
+  .typeset h4,
+  .typeset strong,
+  .typeset th {
+    color: #e0e0e7;
+  }
+  
+  .typeset h3 {
+    color: #b45309;
+  }
+  
+  .typeset h5,
+  .typeset h6,
+  .typeset blockquote {
+    color: #dfdfed;
+  }
+  
+  .typeset h1,
+  .typeset h2 {
+    border-bottom-color: #e4e4e7;
+  }
+  
+  .typeset a {
+    color: #d97706;
+  }
+  
+  .typeset a:hover {
+    color: #b45309;
+  }
+  
+  .typeset code {
+    background: #303030;
+    color: #e19871;
+  }
+  
+  .typeset pre {
+    background: #303030;
+    border-color: #e4e4e7;
+  }
+  
+  .typeset pre code {
+    color: #27272a;
+  }
+  
+  .typeset th,
+  .typeset td {
+    border-color: #e4e4e7;
+  }
+  
+  .typeset th {
+    background: #303030;
+  }
+  
+  .typeset tr:nth-child(even) {
+    background: rgba(244, 244, 245, 0.5);
+  }
+  
+  .typeset hr {
+    border-top-color: #e4e4e7;
+  }
+}

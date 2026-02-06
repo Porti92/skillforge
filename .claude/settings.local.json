@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run dev:*)",
+      "Bash(npx shadcn@latest:*)",
+      "Bash(npm run build:*)",
+      "Bash(bun add:*)",
+      "Bash(bun run dev)",
+      "Bash(cat:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)",
+      "Bash(tree:*)",
+      "Bash(find:*)",
+      "Bash(git push)",
+      "Bash(git push:*)",
+      "Bash(git cherry-pick:*)",
+      "Bash(git stash show:*)",
+      "Bash(git stash:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nRestore lost changes: agent selector, session management, and UI animations\n\n- Add agent selector with hover border gradient effect on home page\n- Add animated shiny text badge with shimmer effect\n- Improve session management for anonymous users with pending sessions\n- Add \"Thinking...\" loading text in chat while fetching AI response\n- Update SignUpModal to use animated SignInModalContent component\n- Add spec mode support (MVP vs production-ready) to API routes\n- Add recommended options index for questions based on spec mode\n- Fix auth redirect flow to properly handle return URLs\n- Add CSS animations for sign-in modal (fade, slide, blur effects)\n- Add coding agents configuration (V0, Bolt, Lovable, etc.)\n- Add public logo assets for coding agents\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git commit -m \"$(cat <<''EOF''\nAdd AI feedback feature and sidebar for authenticated users\n\n- Add SPEC_DELIMITER parsing to show AI conversational responses in chat\n- Add AnimatedText for word-by-word message animation\n- Update API to include response format instruction with delimiter\n- Add SidebarProvider and AppSidebar for authenticated homepage users\n- Show loading state while auth is checking\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")"
+    ]
+  }
+}
