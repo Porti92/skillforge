@@ -83,9 +83,9 @@ export function InteractiveQuestionFlow({
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-6 py-8 relative">
+    <div className="flex min-h-screen items-center justify-center px-4 sm:px-6 py-8 relative">
       <NoiseBackground />
-      <div className="w-full max-w-xl relative z-10">
+      <div className="w-full max-w-xl relative z-10 overflow-hidden">
         <AnimatePresence mode="wait">
           {currentQuestionIndex === 0 && !isTransitioning && (
             <motion.div
@@ -142,7 +142,7 @@ export function InteractiveQuestionFlow({
                       onClick={() => handleSelectOption(option)}
                       disabled={isTransitioning}
                       className={cn(
-                        "w-full justify-start text-left h-auto py-2.5 px-4 text-sm font-normal transition-all",
+                        "w-full justify-start text-left h-auto py-3 px-4 text-sm font-normal transition-all",
                         isSelected
                           ? "bg-amber-600 text-zinc-950 scale-[0.98]"
                           : isRecommended
@@ -151,12 +151,12 @@ export function InteractiveQuestionFlow({
                       )}
                       variant={isSelected ? "default" : "outline"}
                     >
-                      <span className="flex items-center justify-between w-full gap-2">
+                      <span className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-1.5 sm:gap-2">
                         <span className="flex-1">{option}</span>
                         {isRecommended && !isSelected && (
                           <Badge
                             variant="outline"
-                            className="text-amber-500 border-amber-500/50 text-xs shrink-0 bg-transparent"
+                            className="text-amber-500 border-amber-500/50 text-xs shrink-0 bg-transparent w-fit"
                           >
                             Recommended
                           </Badge>
