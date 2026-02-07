@@ -17,7 +17,7 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "SkillForge - AI Agent Skill Generator",
+  title: "AgentSkills - AI Agent Skill Generator",
   description: "Create powerful skills for your AI agents",
 };
 
