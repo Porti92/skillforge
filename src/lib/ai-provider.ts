@@ -11,7 +11,7 @@ export function getGenerationModel() {
 
   // Prefer Google Gemini (free tier)
   if (hasGoogle) {
-    return google("gemini-2.5-flash");
+    return google("models/gemini-2.5-flash");
   }
   if (hasAnthropic) {
     return anthropic("claude-sonnet-4-20250514");
@@ -31,7 +31,7 @@ export function getStructuredModel() {
 
   // Prefer Google Gemini (free tier)
   if (hasGoogle) {
-    return google("gemini-2.5-flash");
+    return google("models/gemini-2.5-flash");
   }
   if (hasAnthropic) {
     return anthropic("claude-sonnet-4-20250514");
