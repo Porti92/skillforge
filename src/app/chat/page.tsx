@@ -4,19 +4,66 @@ import { useState, useEffect, Suspense, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useCompletion } from "@ai-sdk/react";
 import { Button } from "@/components/ui/button";
-import { Copy, Download, Check, Loader2, ArrowLeft, RefreshCw } from "lucide-react";
+import { Copy, Download, Check, Loader2, ArrowLeft, RefreshCw, FolderArchive } from "lucide-react";
 import NoiseBackground from "@/components/ui/noise-background";
+import { FileTree, SkillFile } from "@/components/FileTree";
 
 const SKILL_DELIMITER = "---SKILL_START---";
+const FILE_PATTERN = /===FILE:\s*(.+?)===([\s\S]*?)(?====FILE:|===END_FILES===|$)/g;
 
-function parseAIResponse(response: string): { message: string; spec: string } {
+interface ParsedResponse {
+  message: string;
+  files: SkillFile[];
+  rawSpec: string;
+}
+
+function parseAIResponse(response: string): ParsedResponse {
   const delimiterIndex = response.indexOf(SKILL_DELIMITER);
   if (delimiterIndex === -1) {
-    return { message: "", spec: response };
+    return { message: "", files: [], rawSpec: response };
   }
+  
   const message = response.substring(0, delimiterIndex).trim();
-  const spec = response.substring(delimiterIndex + SKILL_DELIMITER.length).trim();
-  return { message, spec };
+  const rawSpec = response.substring(delimiterIndex + SKILL_DELIMITER.length).trim();
+  
+  // Parse files from the spec
+  const files: SkillFile[] = [];
+  let match;
+  
+  // Reset regex state
+  FILE_PATTERN.lastIndex = 0;
+  
+  while ((match = FILE_PATTERN.exec(rawSpec)) !== null) {
+    const path = match[1].trim();
+    const content = match[2].trim();
+    if (path && content) {
+      files.push({ path, content });
+    }
+  }
+  
+  // If no files parsed, treat whole spec as SKILL.md
+  if (files.length === 0 && rawSpec) {
+    files.push({ path: "SKILL.md", content: rawSpec });
+  }
+  
+  return { message, files, rawSpec };
+}
+
+function generateSkillName(files: SkillFile[]): string {
+  const skillMd = files.find(f => f.path === "SKILL.md");
+  if (skillMd) {
+    // Try to extract name from frontmatter
+    const nameMatch = skillMd.content.match(/^---[\s\S]*?name:\s*(.+?)[\s\n]/m);
+    if (nameMatch) {
+      return nameMatch[1].trim();
+    }
+    // Try to extract from first heading
+    const headingMatch = skillMd.content.match(/^#\s+(.+?)$/m);
+    if (headingMatch) {
+      return headingMatch[1].toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    }
+  }
+  return "my-skill";
 }
 
 function ChatContent() {
@@ -25,7 +72,8 @@ function ChatContent() {
   const fromQuestions = searchParams.get("fromQuestions") === "true";
   const targetAgent = searchParams.get("agent") || "openclaw";
 
-  const [currentSpec, setCurrentSpec] = useState("");
+  const [currentFiles, setCurrentFiles] = useState<SkillFile[]>([]);
+  const [skillName, setSkillName] = useState("my-skill");
   const [copied, setCopied] = useState(false);
   const [statusMessage, setStatusMessage] = useState("Generating your skill...");
   const hasStartedRef = useRef(false);
@@ -35,18 +83,23 @@ function ChatContent() {
     api: "/api/chat",
     streamProtocol: "text",
     onFinish: (_prompt, completionText) => {
-      const { spec } = parseAIResponse(completionText);
-      setCurrentSpec(spec);
+      const { files } = parseAIResponse(completionText);
+      setCurrentFiles(files);
+      setSkillName(generateSkillName(files));
       setStatusMessage("Your skill is ready!");
     },
   });
 
-  // Extract streaming spec for display
-  let displaySpec = currentSpec;
+  // Extract streaming files for display
+  let displayFiles = currentFiles;
+  let streamingRaw = "";
   if (isLoading && completion) {
-    const { spec } = parseAIResponse(completion);
-    displaySpec = spec;
+    const parsed = parseAIResponse(completion);
+    displayFiles = parsed.files;
+    streamingRaw = parsed.rawSpec;
   }
+  
+  const hasFiles = displayFiles.length > 0 || streamingRaw;
 
   // Handle coming from questions page
   useEffect(() => {
@@ -74,24 +127,38 @@ function ChatContent() {
     }
   }, [fromQuestions, complete, targetAgent]);
 
-  const handleCopy = async () => {
-    if (displaySpec) {
-      await navigator.clipboard.writeText(displaySpec);
+  const handleCopyAll = async () => {
+    if (displayFiles.length > 0) {
+      const allContent = displayFiles.map(f => `// ${f.path}\n${f.content}`).join('\n\n---\n\n');
+      await navigator.clipboard.writeText(allContent);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
   };
 
-  const handleDownload = () => {
-    if (displaySpec) {
-      const blob = new Blob([displaySpec], { type: "text/markdown" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "SKILL.md";
-      a.click();
-      URL.revokeObjectURL(url);
+  const handleDownloadZip = async () => {
+    if (displayFiles.length === 0) return;
+    
+    // Dynamic import JSZip
+    const JSZip = (await import('jszip')).default;
+    const zip = new JSZip();
+    
+    // Add files to zip
+    const folder = zip.folder(skillName);
+    if (folder) {
+      displayFiles.forEach(file => {
+        folder.file(file.path, file.content);
+      });
     }
+    
+    // Generate and download
+    const blob = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${skillName}.zip`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleStartOver = () => {
@@ -113,25 +180,25 @@ function ChatContent() {
         </button>
 
         <div className="flex items-center gap-2">
-          {displaySpec && (
+          {hasFiles && !isLoading && (
             <>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleCopy}
+                onClick={handleCopyAll}
                 className="text-zinc-400 hover:text-white"
               >
                 {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                <span className="ml-1 hidden sm:inline">{copied ? "Copied!" : "Copy"}</span>
+                <span className="ml-1 hidden sm:inline">{copied ? "Copied!" : "Copy All"}</span>
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleDownload}
+                onClick={handleDownloadZip}
                 className="text-zinc-400 hover:text-white"
               >
-                <Download className="w-4 h-4" />
-                <span className="ml-1 hidden sm:inline">Download</span>
+                <FolderArchive className="w-4 h-4" />
+                <span className="ml-1 hidden sm:inline">Download ZIP</span>
               </Button>
             </>
           )}
@@ -151,7 +218,7 @@ function ChatContent() {
               Try Again
             </Button>
           </div>
-        ) : !displaySpec && isLoading ? (
+        ) : !hasFiles && isLoading ? (
           <div className="flex flex-col items-center justify-center h-full p-8">
             <Loader2 className="w-8 h-8 text-amber-500 animate-spin mb-4" />
             <p className="text-zinc-400">{statusMessage}</p>
@@ -159,58 +226,68 @@ function ChatContent() {
         ) : (
           <div className="p-4 md:p-6 max-w-4xl mx-auto">
             {/* Status */}
-            {!isLoading && displaySpec && (
+            {!isLoading && displayFiles.length > 0 && (
               <div className="mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg text-green-400 text-sm">
                 ✨ {statusMessage}
               </div>
             )}
 
-            {/* Skill content */}
-            <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl overflow-hidden">
-              <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between">
-                <span className="text-sm font-medium text-zinc-300">Generated Skill</span>
-                {isLoading && (
-                  <span className="text-xs text-amber-500 flex items-center gap-1">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    Generating...
-                  </span>
-                )}
+            {/* Loading indicator while streaming */}
+            {isLoading && (
+              <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-400 text-sm flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Generating your skill...
               </div>
-              <pre className="p-4 overflow-x-auto text-sm text-zinc-300 whitespace-pre-wrap font-mono leading-relaxed">
-                {displaySpec || "Waiting for content..."}
-              </pre>
-            </div>
+            )}
+
+            {/* File Tree */}
+            {displayFiles.length > 0 ? (
+              <FileTree files={displayFiles} skillName={skillName} />
+            ) : streamingRaw ? (
+              // Show raw streaming content while parsing
+              <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-zinc-800">
+                  <span className="text-sm font-medium text-zinc-300">Generating...</span>
+                </div>
+                <pre className="p-4 overflow-x-auto text-sm text-zinc-300 whitespace-pre-wrap font-mono leading-relaxed max-h-[500px] overflow-y-auto">
+                  {streamingRaw}
+                </pre>
+              </div>
+            ) : null}
 
             {/* Actions */}
-            {!isLoading && displaySpec && (
+            {!isLoading && displayFiles.length > 0 && (
               <div className="mt-6 flex flex-col sm:flex-row gap-3">
                 <Button
-                  onClick={handleCopy}
+                  onClick={handleDownloadZip}
                   className="flex-1 bg-amber-500 hover:bg-amber-400 text-black"
                 >
-                  {copied ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
-                  {copied ? "Copied to Clipboard!" : "Copy Skill"}
+                  <FolderArchive className="w-4 h-4 mr-2" />
+                  Download {skillName}.zip
                 </Button>
                 <Button
-                  onClick={handleDownload}
+                  onClick={handleCopyAll}
                   variant="outline"
                   className="flex-1 border-zinc-700 hover:bg-zinc-800"
                 >
-                  <Download className="w-4 h-4 mr-2" />
-                  Download as SKILL.md
+                  {copied ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
+                  {copied ? "Copied!" : "Copy All Files"}
                 </Button>
               </div>
             )}
 
             {/* Instructions */}
-            {!isLoading && displaySpec && (
+            {!isLoading && displayFiles.length > 0 && (
               <div className="mt-8 p-4 bg-zinc-900/50 border border-zinc-800 rounded-lg">
                 <h3 className="text-sm font-medium text-zinc-300 mb-2">How to use this skill:</h3>
                 <ol className="text-sm text-zinc-500 space-y-1 list-decimal list-inside">
-                  <li>Copy or download the skill above</li>
-                  <li>Save it as <code className="text-amber-400">SKILL.md</code> in your agent's skills folder</li>
+                  <li>Download the ZIP or copy the files</li>
+                  <li>Extract to <code className="text-amber-400">~/.openclaw/workspace/skills/{skillName}/</code></li>
                   <li>Your agent will automatically discover and use the skill</li>
                 </ol>
+                <p className="mt-3 text-xs text-zinc-600">
+                  Or install via CLI: <code className="text-amber-400/70">npx agentskills install {skillName}</code> (coming soon)
+                </p>
               </div>
             )}
           </div>
