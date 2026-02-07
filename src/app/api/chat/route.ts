@@ -50,18 +50,39 @@ export async function POST(req: Request) {
 RESPONSE FORMAT:
 1. Brief conversational message (1-2 sentences)
 2. Delimiter: ---SKILL_START---
-3. Complete skill package
+3. Files in this exact format:
+
+===FILE: path/to/file.ext===
+file content here
+===FILE: another/file.ext===
+another file content
+===END_FILES===
 
 Example:
-Great! I'll create a weather skill for your agent.
+Great! Here's a web scraping skill with a helper script.
 
 ---SKILL_START---
-[skill content]`;
+===FILE: SKILL.md===
+---
+name: web-scraper
+description: Scrape web pages
+---
+
+# Web Scraper
+
+Instructions here...
+===FILE: scripts/scrape.py===
+#!/usr/bin/env python3
+import requests
+# script content
+===END_FILES===`;
 
   const skillTemplate = `
 # Skill Structure
 
-## SKILL.md (Required)
+ALWAYS output files using the ===FILE: path=== format.
+
+## Required: SKILL.md
 \`\`\`markdown
 ---
 name: skill-name
@@ -73,32 +94,30 @@ description: One-line description
 What this skill does and when to use it.
 
 ## When to Use
-- Trigger 1
-- Trigger 2
+- Trigger condition 1
+- Trigger condition 2
 
 ## Usage
-Step-by-step instructions.
+Step-by-step instructions the agent should follow.
 
 ## Examples
-\`\`\`
-User: "example"
-Agent: [response]
-\`\`\`
+User: "example request"
+Agent: [what the agent does/responds]
 
 ## Error Handling
-| Error | Solution |
-|-------|----------|
-| API timeout | Retry |
+Common errors and how to handle them.
 
 ## Configuration
-- \`API_KEY\`: Required
+Required environment variables or settings.
 \`\`\`
 
-For multiple files, use:
-===FILE: SKILL.md===
-[content]
-===FILE: scripts/helper.sh===
-[content]
+## Optional: Scripts (scripts/*.py, scripts/*.sh)
+Include executable scripts for complex operations like API calls, data processing, etc.
+
+## Optional: config.json
+Default configuration values.
+
+IMPORTANT: Use actual values, not placeholders like [URL] or [API_KEY]. If a specific value is needed but not provided, use a sensible example or ask in SKILL.md to configure it.
 `;
 
   const systemPrompt = `You are an expert at creating AI agent skills — reusable capability packages.
@@ -114,7 +133,7 @@ Key principles:
 - Examples for testing
 - Environment variables for secrets
 
-${skillComplexity === 'full' ? 'Include helper scripts and config templates.' : 'Keep it simple - just SKILL.md.'}
+${skillComplexity === 'full' ? 'Include helper scripts (scripts/*.py or scripts/*.sh) for complex operations.' : 'Keep it simple - usually just SKILL.md unless scripts are truly needed.'}
 
 Generate a complete, working skill.`;
 
