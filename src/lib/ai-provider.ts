@@ -9,17 +9,17 @@ export function getGenerationModel() {
   const hasAnthropic = !!process.env.ANTHROPIC_API_KEY;
   const hasOpenAI = !!process.env.OPENAI_API_KEY;
 
-  // Prefer Google Gemini (free tier)
-  if (hasGoogle) {
-    return google("models/gemini-2.5-flash");
-  }
+  // Prefer Anthropic (most reliable)
   if (hasAnthropic) {
     return anthropic("claude-sonnet-4-20250514");
+  }
+  if (hasGoogle) {
+    return google("gemini-2.0-flash");
   }
   if (hasOpenAI) {
     return openai("gpt-4o");
   }
-  throw new Error("No AI provider configured. Set GOOGLE_GENERATIVE_AI_API_KEY, ANTHROPIC_API_KEY, or OPENAI_API_KEY.");
+  throw new Error("No AI provider configured. Set ANTHROPIC_API_KEY, GOOGLE_GENERATIVE_AI_API_KEY, or OPENAI_API_KEY.");
 }
 
 // Get model for structured output (questions)
@@ -29,9 +29,12 @@ export function getStructuredModel() {
   const hasAnthropic = !!process.env.ANTHROPIC_API_KEY;
   const hasOpenAI = !!process.env.OPENAI_API_KEY;
 
-  // Prefer Google Gemini (free tier)
+  // Prefer Anthropic (most reliable)
+  if (hasAnthropic) {
+    return anthropic("claude-sonnet-4-20250514");
+  }
   if (hasGoogle) {
-    return google("models/gemini-2.5-flash");
+    return google("gemini-2.0-flash");
   }
   if (hasAnthropic) {
     return anthropic("claude-sonnet-4-20250514");
