@@ -9,9 +9,9 @@ export function getGenerationModel() {
   const hasAnthropic = !!process.env.ANTHROPIC_API_KEY;
   const hasOpenAI = !!process.env.OPENAI_API_KEY;
 
-  // Prefer Anthropic (most reliable)
+  // Prefer Anthropic (most reliable) - use claude-3-5-sonnet for SDK v2 compatibility
   if (hasAnthropic) {
-    return anthropic("claude-sonnet-4-20250514");
+    return anthropic("claude-3-5-sonnet-20241022");
   }
   if (hasGoogle) {
     return google("gemini-2.0-flash");
@@ -29,31 +29,28 @@ export function getStructuredModel() {
   const hasAnthropic = !!process.env.ANTHROPIC_API_KEY;
   const hasOpenAI = !!process.env.OPENAI_API_KEY;
 
-  // Prefer Anthropic (most reliable)
+  // Prefer Anthropic (most reliable) - use claude-3-5-sonnet for SDK v2 compatibility
   if (hasAnthropic) {
-    return anthropic("claude-sonnet-4-20250514");
+    return anthropic("claude-3-5-sonnet-20241022");
   }
   if (hasGoogle) {
     return google("gemini-2.0-flash");
   }
-  if (hasAnthropic) {
-    return anthropic("claude-sonnet-4-20250514");
-  }
   if (hasOpenAI) {
     return openai("gpt-4o");
   }
-  throw new Error("No AI provider configured. Set GOOGLE_GENERATIVE_AI_API_KEY, ANTHROPIC_API_KEY, or OPENAI_API_KEY.");
+  throw new Error("No AI provider configured. Set ANTHROPIC_API_KEY, GOOGLE_GENERATIVE_AI_API_KEY, or OPENAI_API_KEY.");
 }
 
 // Helper to check if providers are configured (also runtime)
-export function hasAnthropic() {
+export function hasAnthropicKey() {
   return !!process.env.ANTHROPIC_API_KEY;
 }
 
-export function hasOpenAI() {
+export function hasOpenAIKey() {
   return !!process.env.OPENAI_API_KEY;
 }
 
-export function hasGoogle() {
+export function hasGoogleKey() {
   return !!process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 }
