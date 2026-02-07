@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const hasGoogle = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY;
   const hasAnthropic = !!process.env.ANTHROPIC_API_KEY;
