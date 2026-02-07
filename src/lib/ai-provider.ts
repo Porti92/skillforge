@@ -11,7 +11,7 @@ const hasGoogle = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 export function getGenerationModel() {
   // Prefer Google Gemini (free tier)
   if (hasGoogle) {
-    return google("gemini-2.0-flash");
+    return google("gemini-2.5-flash");
   }
   if (hasAnthropic) {
     return anthropic("claude-sonnet-4-20250514");
@@ -26,7 +26,7 @@ export function getGenerationModel() {
 export function getStructuredModel() {
   // Prefer Google Gemini (free tier)
   if (hasGoogle) {
-    return google("gemini-2.0-flash");
+    return google("gemini-2.5-flash");
   }
   if (hasAnthropic) {
     return anthropic("claude-sonnet-4-20250514");
