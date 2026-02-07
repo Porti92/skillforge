@@ -145,8 +145,9 @@ Update and output the complete revised skill.`;
   }
 
   try {
+    const model = getGenerationModel();
     const result = await streamText({
-      model: getGenerationModel(),
+      model,
       system: systemPrompt,
       prompt: userPrompt,
     });
@@ -154,6 +155,7 @@ Update and output the complete revised skill.`;
     return result.toTextStreamResponse();
   } catch (error) {
     console.error("Error generating skill:", error);
-    return new Response("Failed to generate skill. Please check API configuration.", { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return new Response(`Error: ${errorMessage}`, { status: 500 });
   }
 }
