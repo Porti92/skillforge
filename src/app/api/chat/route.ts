@@ -1,5 +1,5 @@
-import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
+import { getGenerationModel } from "@/lib/ai-provider";
 
 interface Message {
   role: "user" | "assistant";
@@ -46,206 +46,77 @@ export async function POST(req: Request) {
 
   const isInitial = !messages || messages.length === 0;
 
-  const complexityInstruction = skillComplexity === 'full'
-    ? `
-SKILL COMPLEXITY: FULL
-Generate a comprehensive skill package with:
-- Complete SKILL.md with detailed instructions
-- Helper scripts for complex operations
-- Config templates for API keys and settings
-- Comprehensive error handling and edge cases
-- Usage examples and test scenarios
-- Installation and setup instructions`
-    : `
-SKILL COMPLEXITY: SIMPLE
-Generate a lean, focused skill with:
-- Clear, concise SKILL.md
-- Inline instructions (no separate scripts unless essential)
-- Minimal configuration
-- Core functionality only
-- Easy to install and use immediately`;
-
   const responseFormatInstruction = `
-CRITICAL RESPONSE FORMAT:
-Your response MUST follow this exact structure:
-1. First, write a brief conversational message (1-2 sentences) acknowledging the user's input
-2. Then output the exact delimiter: ---SKILL_START---
-3. Then output the complete skill package
+RESPONSE FORMAT:
+1. Brief conversational message (1-2 sentences)
+2. Delimiter: ---SKILL_START---
+3. Complete skill package
 
-Example format:
-Great! I'll create a skill that lets your agent fetch weather data from any location.
+Example:
+Great! I'll create a weather skill for your agent.
 
 ---SKILL_START---
-# SKILL.md content here...
+[skill content]`;
 
-ALWAYS include the conversational message and delimiter before the skill content.`;
+  const skillTemplate = `
+# Skill Structure
 
-  const skillStructureGuide = `
-# Skill Package Structure
-
-A complete skill package consists of:
-
-## 1. SKILL.md (Required)
-The main instruction file. Must include:
-
+## SKILL.md (Required)
 \`\`\`markdown
 ---
 name: skill-name
-description: One-line description for skill discovery
-metadata:
-  openclaw:
-    emoji: "🔧"
-    requires:
-      bins: ["curl", "jq"]  # CLI tools needed
-      env: ["API_KEY"]       # Environment variables needed
-    install:
-      - id: "setup"
-        kind: "shell"
-        command: "npm install something"
-        label: "Install dependencies"
+description: One-line description
 ---
 
 # Skill Name
 
-Brief description of what this skill does and when the agent should use it.
+What this skill does and when to use it.
 
 ## When to Use
-
-- Trigger condition 1
-- Trigger condition 2
-- NOT for: things this skill shouldn't be used for
-
-## Prerequisites
-
-- Required API keys or credentials
-- Required CLI tools
-- Any setup steps
+- Trigger 1
+- Trigger 2
 
 ## Usage
-
-### Basic Usage
-Step-by-step instructions for the most common use case.
-
-### Advanced Usage
-More complex scenarios and options.
+Step-by-step instructions.
 
 ## Examples
-
-### Example 1: [Scenario Name]
-\\\`\\\`\\\`
-User: "example request"
-Agent: [what the agent should do]
-\\\`\\\`\\\`
-
-### Example 2: [Another Scenario]
-\\\`\\\`\\\`
-User: "another example"
+\`\`\`
+User: "example"
 Agent: [response]
-\\\`\\\`\\\`
+\`\`\`
 
 ## Error Handling
-
-| Error | Cause | Solution |
-|-------|-------|----------|
-| API timeout | Network issues | Retry with backoff |
-| Auth failed | Invalid API key | Ask user to check credentials |
+| Error | Solution |
+|-------|----------|
+| API timeout | Retry |
 
 ## Configuration
-
-Settings the user can customize in TOOLS.md or environment:
-- \`API_KEY\`: Required for authentication
-- \`DEFAULT_OPTION\`: Optional, defaults to X
-
-## Notes
-
-- Important caveats
-- Rate limits
-- Security considerations
+- \`API_KEY\`: Required
 \`\`\`
 
-## 2. Scripts (Optional, for full skills)
-Helper scripts in a \`scripts/\` folder:
-- \`scripts/fetch-data.sh\` — Shell scripts for complex operations
-- \`scripts/process.py\` — Python scripts if needed
-
-## 3. Config Templates (Optional)
-- \`.env.example\` — Template for environment variables
-- \`config.example.json\` — Template for configuration files
-
-## 4. References (Optional)
-- \`references/api-docs.md\` — Relevant API documentation
-- \`references/examples.md\` — Extended examples
-`;
-
-  const systemPrompt = isInitial
-    ? `You are an expert at creating AI agent skills — reusable capability packages that give AI assistants like OpenClaw, Claude Code, and similar agents new abilities.
-
-${complexityInstruction}
-
-${responseFormatInstruction}
-
-${skillStructureGuide}
-
-# Your Task
-
-When a user describes a capability they want their agent to have, generate a complete, production-ready skill package.
-
-## Key Principles
-
-1. **Clear Triggers**: The agent must know WHEN to use this skill
-2. **Step-by-Step**: Instructions should be unambiguous and sequential
-3. **Error Resilience**: Anticipate what can go wrong and how to handle it
-4. **Security First**: Never store secrets in skill files; use environment variables
-5. **Testable**: Include examples the agent can use to verify the skill works
-
-## What Makes a Great Skill
-
-- **Focused**: Does one thing well
-- **Self-Contained**: All instructions in one place
-- **Defensive**: Handles edge cases gracefully
-- **Documented**: Examples for every major use case
-- **Maintainable**: Easy to update and extend
-
-## Output Format
-
-Generate the complete skill package as a single document with clear file separators:
-
-\`\`\`
-📁 skill-name/
-├── SKILL.md
-├── scripts/
-│   └── helper.sh (if needed)
-└── .env.example (if needed)
-\`\`\`
-
-Use this format to separate files:
-\`\`\`
+For multiple files, use:
 ===FILE: SKILL.md===
 [content]
-
 ===FILE: scripts/helper.sh===
 [content]
+`;
 
-===FILE: .env.example===
-[content]
-\`\`\`
+  const systemPrompt = `You are an expert at creating AI agent skills — reusable capability packages.
 
-Generate the skill now based on the user's description.`
-    : `You are an expert at creating AI agent skills. You're helping iterate on a skill package.
-
-${complexityInstruction}
 ${responseFormatInstruction}
 
-Current skill content:
-${currentSpec}
+${skillTemplate}
 
-Your task:
-1. If the user answered clarifying questions, generate the complete skill package
-2. If the user is requesting changes, update the skill accordingly
+Key principles:
+- Clear triggers (when to use)
+- Simple step-by-step instructions
+- Error handling
+- Examples for testing
+- Environment variables for secrets
 
-${skillStructureGuide}
+${skillComplexity === 'full' ? 'Include helper scripts and config templates.' : 'Keep it simple - just SKILL.md.'}
 
-Output the complete updated skill package with all files.`;
+Generate a complete, working skill.`;
 
   let userPrompt: string;
 
@@ -254,38 +125,35 @@ Output the complete updated skill package with all files.`;
       .map(([index, answer]) => `Q${parseInt(index) + 1}: ${answer}`)
       .join('\n');
 
-    userPrompt = `The user has answered the clarifying questions. Generate the complete skill package.
+    userPrompt = `Create skill for: "${originalPrompt}"
 
-Original Skill Idea:
-${originalPrompt}
-
-User's Answers:
+Answers:
 ${answersText}
 
-Target Agent: ${targetAgent}
-Complexity: ${skillComplexity}
-
-Generate the complete skill package now.`;
+Generate the complete skill now.`;
   } else if (isInitial) {
-    userPrompt = `Create a skill for this capability:
-
-${prompt}
-
-Target Agent: ${targetAgent}
-Complexity: ${skillComplexity}
+    userPrompt = `Create a skill for: "${prompt}"
 
 Generate the complete skill package.`;
   } else {
-    userPrompt = `User feedback: ${prompt}
+    userPrompt = `Feedback: ${prompt}
 
-Update the skill based on this feedback and output the complete revised package.`;
+Current skill:
+${currentSpec}
+
+Update and output the complete revised skill.`;
   }
 
-  const result = await streamText({
-    model: openai("gpt-4o"),
-    system: systemPrompt,
-    prompt: userPrompt,
-  });
+  try {
+    const result = await streamText({
+      model: getGenerationModel(),
+      system: systemPrompt,
+      prompt: userPrompt,
+    });
 
-  return result.toTextStreamResponse();
+    return result.toTextStreamResponse();
+  } catch (error) {
+    console.error("Error generating skill:", error);
+    return new Response("Failed to generate skill. Please check API configuration.", { status: 500 });
+  }
 }

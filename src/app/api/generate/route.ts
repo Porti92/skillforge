@@ -1,57 +1,53 @@
-import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
+import { getGenerationModel } from "@/lib/ai-provider";
 
 export async function POST(req: Request) {
   const { description, skillComplexity, targetAgent } = await req.json();
 
-  const complexityNote = skillComplexity === 'full' 
-    ? "Generate a comprehensive skill with helper scripts and config templates."
-    : "Generate a focused SKILL.md file.";
+  const systemPrompt = `You are an expert at creating AI agent skills.
 
-  const systemPrompt = `You are an expert at creating AI agent skills — reusable capability packages that give AI assistants new abilities.
+Generate a complete SKILL.md file based on the user's description.
 
-Your task is to generate a complete skill package based on the user's description.
+Structure:
+---
+name: skill-name
+description: One-line description
+---
 
-${complexityNote}
+# Skill Name
 
-A skill package includes:
+What this skill does.
 
-1. **SKILL.md** - The main instruction file with:
-   - Frontmatter (name, description, requirements)
-   - When to use this skill
-   - Step-by-step instructions
-   - Examples
-   - Error handling
-   - Configuration options
+## When to Use
+- Trigger conditions
 
-2. **Scripts** (optional, for full skills) - Helper scripts for complex operations
+## Usage
+Step-by-step instructions.
 
-3. **Config templates** (optional) - .env.example or config templates
+## Examples
+User: "example"
+Agent: [response]
 
-Output format:
-\`\`\`
-===FILE: SKILL.md===
-[content]
+## Error Handling
+| Error | Solution |
+|-------|----------|
+| Issue | Fix |
 
-===FILE: scripts/helper.sh===
-[content if needed]
+## Configuration
+- API_KEY: Required for...
 
-===FILE: .env.example===
-[content if needed]
-\`\`\`
+${skillComplexity === 'full' ? 'Include helper scripts if needed.' : 'Keep it simple.'}`;
 
-Generate a production-ready skill that:
-- Has clear trigger conditions (when to use)
-- Includes practical examples
-- Handles errors gracefully
-- Uses environment variables for secrets
-- Is easy to install and use`;
+  try {
+    const result = await streamText({
+      model: getGenerationModel(),
+      system: systemPrompt,
+      prompt: `Create a skill for: "${description}"`,
+    });
 
-  const result = streamText({
-    model: openai("gpt-4o"),
-    system: systemPrompt,
-    prompt: `Create a skill for this capability:\n\n${description}\n\nTarget Agent: ${targetAgent || 'openclaw'}\nComplexity: ${skillComplexity || 'simple'}`,
-  });
-
-  return result.toTextStreamResponse();
+    return result.toTextStreamResponse();
+  } catch (error) {
+    console.error("Error generating skill:", error);
+    return new Response("Failed to generate skill", { status: 500 });
+  }
 }

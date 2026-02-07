@@ -1,6 +1,6 @@
-import { openai } from "@ai-sdk/openai";
 import { generateObject } from "ai";
 import { z } from "zod";
+import { getStructuredModel } from "@/lib/ai-provider";
 
 const QuestionSchema = z.object({
   question: z.string(),
@@ -39,69 +39,41 @@ export async function POST(req: Request) {
   const targetAgent = typeof parsedBody.targetAgent === "string" ? parsedBody.targetAgent : "openclaw";
 
   const complexityInstruction = skillComplexity === 'full'
-    ? `The user wants a FULL skill with scripts, config templates, and comprehensive error handling. For each question, set recommendedIndex to the option that is more robust and complete.`
-    : `The user wants a SIMPLE skill (primarily a SKILL.md file). For each question, set recommendedIndex to the option that is simpler and more straightforward.`;
+    ? `The user wants a FULL skill with scripts and config templates. Recommend robust options.`
+    : `The user wants a SIMPLE skill. Recommend straightforward options.`;
 
-  const systemPrompt = `You are an expert at creating AI agent skills — reusable capability packages that give AI assistants new abilities.
+  const systemPrompt = `You are an expert at creating AI agent skills.
 
-Your task is to generate 3-5 highly targeted multiple-choice questions that will help create the best possible skill for the user's needs.
+Generate 3-5 multiple-choice questions to clarify how to build the best skill for the user.
 
 ${complexityInstruction}
 
 Each question should:
-- Focus on critical decisions that affect how the skill works
-- Be clear and easy to understand
-- Provide 2-5 specific, actionable options
-- Include a recommendedIndex (0-based) indicating the best option for the user's complexity preference
+- Be clear and easy to understand (non-technical users!)
+- Have 2-4 simple options
+- Include recommendedIndex (0-based) for the best option
 
-Question categories to consider:
+Focus on:
+- What triggers the skill (user request, automatic, scheduled)
+- What external services/APIs it needs
+- What output format is expected
+- Basic error handling approach
 
-**External Dependencies**
-- What CLI tools does this skill need? (curl, jq, ffmpeg, specific APIs)
-- Does it require API keys or authentication?
-- Are there rate limits or usage constraints to handle?
-
-**Workflow & Triggers**
-- When should the agent use this skill? (explicit request, automatic detection, scheduled)
-- What's the typical input format? (natural language, structured data, files)
-- What's the expected output? (text response, files, side effects)
-
-**Error Handling**
-- What can go wrong? (network failures, auth errors, invalid input)
-- How should failures be communicated to the user?
-- Should there be retry logic or fallbacks?
-
-**Scope & Boundaries**
-- Should the skill be read-only or can it make changes?
-- What safety checks are needed?
-- Are there actions that should require user confirmation?
-
-**Configuration**
-- What settings should be user-configurable?
-- Are there environment-specific values (API endpoints, credentials)?
-- Should the skill remember state between uses?
-
-Make questions highly relevant to the specific skill idea provided. Focus on decisions that will significantly impact the skill's usefulness and reliability.`;
+Keep questions SHORT and SIMPLE. Avoid technical jargon.`;
 
   try {
     const result = await generateObject({
-      model: openai("gpt-4o"),
+      model: getStructuredModel(),
       schema: QuestionsResponseSchema,
       system: systemPrompt,
-      prompt: `Generate clarifying questions for this skill idea:
+      prompt: `Skill idea: "${prompt}"
 
-Skill Description:
-${prompt}
-
-Target Agent: ${targetAgent}
-Complexity: ${skillComplexity}
-
-Generate 3-5 multiple-choice questions with 2-5 options each to help create the best possible skill.`,
+Generate 3-5 simple questions to clarify what this skill should do.`,
     });
 
     return Response.json(result.object);
   } catch (error) {
     console.error("Error generating questions:", error);
-    return new Response("Failed to generate questions", { status: 500 });
+    return new Response("Failed to generate questions. Please check API configuration.", { status: 500 });
   }
 }
