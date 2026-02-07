@@ -8,8 +8,18 @@ const QuestionSchema = z.object({
   recommendedIndex: z.number().min(0).max(4),
 });
 
+const ConfigFieldSchema = z.object({
+  id: z.string().describe("Unique identifier like 'website_url' or 'api_key'"),
+  label: z.string().describe("Human-readable label like 'Website URL'"),
+  placeholder: z.string().describe("Example value like 'https://example.com'"),
+  type: z.enum(["text", "url", "password", "number", "email"]).describe("Input type"),
+  required: z.boolean().describe("Whether this field is required"),
+  description: z.string().optional().describe("Help text explaining what this is for"),
+});
+
 const QuestionsResponseSchema = z.object({
   questions: z.array(QuestionSchema).min(3).max(5),
+  configFields: z.array(ConfigFieldSchema).describe("Configuration values the skill needs from the user"),
 });
 
 export async function POST(req: Request) {
@@ -44,10 +54,11 @@ export async function POST(req: Request) {
 
   const systemPrompt = `You are an expert at creating AI agent skills.
 
-Generate 3-5 multiple-choice questions to clarify how to build the best skill for the user.
+Generate 3-5 multiple-choice questions AND configuration fields needed for the skill.
 
 ${complexityInstruction}
 
+## Questions (3-5)
 Each question should:
 - Be clear and easy to understand (non-technical users!)
 - Have 2-4 simple options
@@ -59,7 +70,21 @@ Focus on:
 - What output format is expected
 - Basic error handling approach
 
-Keep questions SHORT and SIMPLE. Avoid technical jargon.`;
+Keep questions SHORT and SIMPLE. Avoid technical jargon.
+
+## Configuration Fields (0-5)
+Detect specific values the skill needs to work. Examples:
+- Website URL to monitor → { id: "website_url", label: "Website URL", type: "url", placeholder: "https://example.com", required: true }
+- API key → { id: "api_key", label: "API Key", type: "password", placeholder: "sk-...", required: true }
+- Email to notify → { id: "notification_email", label: "Email for notifications", type: "email", placeholder: "you@example.com", required: false }
+- Check interval → { id: "interval_minutes", label: "Check every (minutes)", type: "number", placeholder: "30", required: true }
+
+Only include config fields for values that:
+1. Are specific to the user's use case (not generic like "skill name")
+2. Cannot be reasonably defaulted
+3. Are referenced in the skill idea (URLs, names, credentials, etc.)
+
+If the skill doesn't need specific configuration, return an empty array.`;
 
   try {
     const result = await generateObject({

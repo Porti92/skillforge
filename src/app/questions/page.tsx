@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { InteractiveQuestionFlow, InteractiveQuestionFlowLoader } from "@/components/InteractiveQuestionFlow";
+import { ConfigurationForm, ConfigField } from "@/components/ConfigurationForm";
 import { USE_FASTAPI, generateQuestions } from "@/lib/fastapi-client";
 
 interface Question {
@@ -13,6 +14,13 @@ interface Question {
   recommendedIndex?: number;
 }
 
+type FlowStep = "loading" | "questions" | "config";
+
+interface FetchQuestionsResult {
+  questions: Question[];
+  configFields: ConfigField[];
+}
+
 /**
  * Fetch questions from the appropriate backend (FastAPI or Next.js API).
  */
@@ -20,7 +28,7 @@ async function fetchQuestions(params: {
   prompt: string;
   skillComplexity: string;
   targetAgent?: string;
-}): Promise<Question[]> {
+}): Promise<FetchQuestionsResult> {
   if (USE_FASTAPI) {
     // Use FastAPI backend
     const response = await generateQuestions({
@@ -28,12 +36,15 @@ async function fetchQuestions(params: {
       skillComplexity: params.skillComplexity,
       targetAgent: params.targetAgent,
     });
-    return response.questions.map((q) => ({
-      id: q.id,
-      question: q.question,
-      options: q.options,
-      recommendedIndex: q.recommendedIndex,
-    }));
+    return {
+      questions: response.questions.map((q) => ({
+        id: q.id,
+        question: q.question,
+        options: q.options,
+        recommendedIndex: q.recommendedIndex,
+      })),
+      configFields: [], // FastAPI doesn't support config fields yet
+    };
   } else {
     // Use existing Next.js API
     const res = await fetch("/api/questions", {
@@ -46,7 +57,10 @@ async function fetchQuestions(params: {
       }),
     });
     const data = await res.json();
-    return data.questions;
+    return {
+      questions: data.questions || [],
+      configFields: data.configFields || [],
+    };
   }
 }
 
@@ -57,8 +71,10 @@ function QuestionsContent() {
   const skillComplexity = searchParams.get("complexity") || "simple";
   const agent = searchParams.get("agent") || "";
 
-  const [questions, setQuestions] = useState<Question[] | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [step, setStep] = useState<FlowStep>("loading");
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [configFields, setConfigFields] = useState<ConfigField[]>([]);
+  const [questionAnswers, setQuestionAnswers] = useState<Record<number, string>>({});
   const hasStartedRef = useRef(false);
 
   useEffect(() => {
@@ -70,8 +86,10 @@ function QuestionsContent() {
       skillComplexity,
       targetAgent: agent || undefined,
     })
-      .then((questions) => {
-        setQuestions(questions);
+      .then((result) => {
+        setQuestions(result.questions);
+        setConfigFields(result.configFields);
+        setStep("questions");
       })
       .catch((err) => {
         console.error("Error loading questions:", err);
@@ -80,26 +98,43 @@ function QuestionsContent() {
         params.set("description", description);
         params.set("skipQuestions", "true");
         router.replace(`/chat?${params.toString()}`);
-      })
-      .finally(() => {
-        setIsLoading(false);
       });
   }, [description, skillComplexity, agent, router]);
 
-  const handleComplete = (answers: Record<number, string>) => {
-    // Convert indexed answers to structured format for FastAPI
-    // Store both formats for backward compatibility
-    const structuredAnswers = questions
+  const handleQuestionsComplete = (answers: Record<number, string>) => {
+    setQuestionAnswers(answers);
+    
+    // If there are config fields, show config step
+    if (configFields.length > 0) {
+      setStep("config");
+    } else {
+      // No config needed, go directly to chat
+      navigateToChat(answers, {});
+    }
+  };
+
+  const handleConfigComplete = (configValues: Record<string, string>) => {
+    navigateToChat(questionAnswers, configValues);
+  };
+
+  const handleConfigSkip = () => {
+    navigateToChat(questionAnswers, {});
+  };
+
+  const navigateToChat = (answers: Record<number, string>, configValues: Record<string, string>) => {
+    // Convert indexed answers to structured format
+    const structuredAnswers = questions.length > 0
       ? Object.entries(answers).map(([index, answer]) => ({
           questionId: questions[parseInt(index)]?.id || `q${parseInt(index) + 1}`,
           answer,
         }))
       : [];
 
-    // Store answers in sessionStorage to pass to chat page
+    // Store everything in sessionStorage to pass to chat page
     sessionStorage.setItem("questionAnswers", JSON.stringify({
-      answers, // Keep original format for backward compatibility
-      structuredAnswers, // New format for FastAPI
+      answers,
+      structuredAnswers,
+      configValues,
       description,
       skillComplexity,
       agent,
@@ -118,14 +153,22 @@ function QuestionsContent() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-zinc-100">
-      {isLoading ? (
-        <InteractiveQuestionFlowLoader />
-      ) : questions ? (
+      {step === "loading" && <InteractiveQuestionFlowLoader />}
+      
+      {step === "questions" && questions.length > 0 && (
         <InteractiveQuestionFlow
           questions={questions}
-          onComplete={handleComplete}
+          onComplete={handleQuestionsComplete}
         />
-      ) : null}
+      )}
+      
+      {step === "config" && (
+        <ConfigurationForm
+          fields={configFields}
+          onComplete={handleConfigComplete}
+          onSkip={configFields.every(f => !f.required) ? handleConfigSkip : undefined}
+        />
+      )}
     </div>
   );
 }
