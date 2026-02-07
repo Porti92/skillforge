@@ -108,7 +108,7 @@ function ChatContent() {
 
       const storedData = sessionStorage.getItem("questionAnswers");
       if (storedData) {
-        const { answers, description, skillComplexity, agent } = JSON.parse(storedData);
+        const { answers, description, skillComplexity, agent, configValues } = JSON.parse(storedData);
         descriptionRef.current = description;
 
         complete("Generating skill...", {
@@ -119,6 +119,7 @@ function ChatContent() {
             originalPrompt: description,
             skillComplexity: skillComplexity || "simple",
             targetAgent: agent || targetAgent,
+            configValues: configValues || {},
           },
         });
 

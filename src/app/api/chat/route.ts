@@ -24,6 +24,7 @@ export async function POST(req: Request) {
     targetAgent: string;
     structuredAnswers: StructuredAnswers;
     originalPrompt: string;
+    configValues: Record<string, string>;
   }> = {};
 
   try {
@@ -43,6 +44,7 @@ export async function POST(req: Request) {
   const targetAgent = typeof parsedBody.targetAgent === "string" ? parsedBody.targetAgent : "openclaw";
   const structuredAnswers = parsedBody.structuredAnswers || null;
   const originalPrompt = typeof parsedBody.originalPrompt === "string" ? parsedBody.originalPrompt : "";
+  const configValues = parsedBody.configValues || {};
 
   const isInitial = !messages || messages.length === 0;
 
@@ -144,10 +146,18 @@ Generate a complete, working skill.`;
       .map(([index, answer]) => `Q${parseInt(index) + 1}: ${answer}`)
       .join('\n');
 
+    const configText = Object.keys(configValues).length > 0
+      ? `\n\nConfiguration values (USE THESE EXACT VALUES in the skill):\n${Object.entries(configValues)
+          .map(([key, value]) => `- ${key}: ${value}`)
+          .join('\n')}`
+      : '';
+
     userPrompt = `Create skill for: "${originalPrompt}"
 
 Answers:
-${answersText}
+${answersText}${configText}
+
+IMPORTANT: If configuration values are provided above, embed them directly in the skill files. Do NOT use placeholders like [URL] or [API_KEY] - use the actual values provided.
 
 Generate the complete skill now.`;
   } else if (isInitial) {
