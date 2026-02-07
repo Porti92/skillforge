@@ -39,3 +39,4 @@ export function getStructuredModel() {
   }
   throw new Error("No AI provider configured.");
 }
+// Deploy trigger Sat Feb  7 09:31:36 UTC 2026
