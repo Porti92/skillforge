@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Instrument_Serif } from "next/font/google";
 import "./globals.css";
+import { ClerkProvider } from "@clerk/nextjs";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Navbar } from "@/components/Navbar";
 
@@ -31,10 +32,22 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${instrumentSerif.variable} antialiased`}
       >
-        <AuthProvider>
-          <Navbar />
-          {children}
-        </AuthProvider>
+        <ClerkProvider
+          appearance={{
+            variables: {
+              colorPrimary: "#f59e0b",
+              colorBackground: "#0a0a0b",
+              colorInputBackground: "#18181b",
+              colorInputText: "#fafafa",
+              colorText: "#fafafa",
+            },
+          }}
+        >
+          <AuthProvider>
+            <Navbar />
+            {children}
+          </AuthProvider>
+        </ClerkProvider>
       </body>
     </html>
   );
