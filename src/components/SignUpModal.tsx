@@ -30,7 +30,7 @@ export function SignUpModal({
       <DialogContent className="sm:max-w-md bg-[#0a0a0b] border-zinc-800">
         <SignInModalContent
           title="Ready to dive deeper?"
-          description="Sign in to continue your journey with Prompt Architect"
+          description="Sign in to continue your journey with AgentSkills"
           onGoogleSignIn={handleGoogleSignIn}
         />
       </DialogContent>

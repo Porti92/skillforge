@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { getSupabaseClient } from "@/lib/supabase";
 
-const PENDING_SESSION_KEY = "prompt-architect-pending-session";
+const PENDING_SESSION_KEY = "agentskills-pending-session";
 
 export default function AuthRedirectPage() {
   const router = useRouter();

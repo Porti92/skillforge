@@ -31,7 +31,7 @@ export default function PrivacyPolicy() {
           <section>
             <h2 className="text-xl font-medium text-zinc-100 mb-3">1. Introduction</h2>
             <p>
-              Welcome to Prompt Architect. We respect your privacy and are committed to protecting your personal data.
+              Welcome to AgentSkills. We respect your privacy and are committed to protecting your personal data.
               This privacy policy explains how we collect, use, and safeguard your information when you use our service.
             </p>
           </section>
@@ -117,8 +117,8 @@ export default function PrivacyPolicy() {
             <h2 className="text-xl font-medium text-zinc-100 mb-3">10. Contact Us</h2>
             <p>
               If you have any questions about this privacy policy or our data practices, please contact us at{" "}
-              <a href="mailto:support@promptarchitect.com" className="text-amber-500 hover:text-amber-400">
-                support@promptarchitect.com
+              <a href="mailto:support@agentskills.dev" className="text-amber-500 hover:text-amber-400">
+                support@agentskills.dev
               </a>
             </p>
           </section>

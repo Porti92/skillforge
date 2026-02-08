@@ -158,7 +158,7 @@ export const SignInModalContent: React.FC<SignInModalContentProps> = ({
       Ready to dive deeper?
     </span>
   ),
-  description = "Sign in to continue your journey with Prompt Architect",
+  description = "Sign in to continue your journey with AgentSkills",
   onGoogleSignIn,
 }) => {
   return (

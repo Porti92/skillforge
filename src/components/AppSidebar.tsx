@@ -29,7 +29,7 @@ export function AppSidebar() {
       <SidebarHeader className="p-4">
         <Link href="/" className="flex items-center">
           <span className="font-[family-name:var(--font-instrument-serif)] italic text-lg font-medium text-zinc-100 group-data-[collapsible=icon]:hidden">
-            Prompt Architect
+            AgentSkills
           </span>
         </Link>
       </SidebarHeader>

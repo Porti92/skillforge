@@ -31,7 +31,7 @@ export default function TermsAndConditions() {
           <section>
             <h2 className="text-xl font-medium text-zinc-100 mb-3">1. Acceptance of Terms</h2>
             <p>
-              By accessing and using Prompt Architect, you accept and agree to be bound by these Terms and Conditions.
+              By accessing and using AgentSkills, you accept and agree to be bound by these Terms and Conditions.
               If you do not agree to these terms, please do not use our service.
             </p>
           </section>
@@ -39,7 +39,7 @@ export default function TermsAndConditions() {
           <section>
             <h2 className="text-xl font-medium text-zinc-100 mb-3">2. Description of Service</h2>
             <p>
-              Prompt Architect is an AI-powered tool that transforms your ideas into production-ready prompts
+              AgentSkills is an AI-powered tool that transforms your ideas into production-ready prompts
               optimized for AI coding agents such as Claude, Cursor, and similar tools. Our service helps you
               create detailed specifications and prompts for software development projects.
             </p>
@@ -58,7 +58,7 @@ export default function TermsAndConditions() {
 
           <section>
             <h2 className="text-xl font-medium text-zinc-100 mb-3">4. Acceptable Use</h2>
-            <p className="mb-3">You agree not to use Prompt Architect to:</p>
+            <p className="mb-3">You agree not to use AgentSkills to:</p>
             <ul className="list-disc list-inside space-y-2 ml-4">
               <li>Generate content that is illegal, harmful, or violates third-party rights</li>
               <li>Attempt to reverse-engineer or extract our AI models or algorithms</li>
@@ -94,7 +94,7 @@ export default function TermsAndConditions() {
           <section>
             <h2 className="text-xl font-medium text-zinc-100 mb-3">7. Limitation of Liability</h2>
             <p>
-              To the maximum extent permitted by law, Prompt Architect shall not be liable for any indirect,
+              To the maximum extent permitted by law, AgentSkills shall not be liable for any indirect,
               incidental, special, consequential, or punitive damages, including but not limited to loss of profits,
               data, or business opportunities, arising from your use of the service.
             </p>
@@ -138,8 +138,8 @@ export default function TermsAndConditions() {
             <h2 className="text-xl font-medium text-zinc-100 mb-3">12. Contact Us</h2>
             <p>
               If you have any questions about these Terms and Conditions, please contact us at{" "}
-              <a href="mailto:support@promptarchitect.com" className="text-amber-500 hover:text-amber-400">
-                support@promptarchitect.com
+              <a href="mailto:support@agentskills.dev" className="text-amber-500 hover:text-amber-400">
+                support@agentskills.dev
               </a>
             </p>
           </section>

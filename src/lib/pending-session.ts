@@ -1,4 +1,4 @@
-const PENDING_SESSION_KEY = "prompt-architect-pending-session";
+const PENDING_SESSION_KEY = "agentskills-pending-session";
 
 export interface PendingSession {
   id: string;

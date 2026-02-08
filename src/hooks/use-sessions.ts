@@ -29,7 +29,7 @@ interface DbSession {
   updated_at: string;
 }
 
-const SESSIONS_KEY = "prompt-architect-sessions";
+const SESSIONS_KEY = "agentskills-sessions";
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
