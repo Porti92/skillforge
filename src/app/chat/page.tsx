@@ -3,8 +3,9 @@
 import { useState, useEffect, Suspense, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useCompletion } from "@ai-sdk/react";
+import { useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
-import { Copy, Download, Check, Loader2, ArrowLeft, RefreshCw, FolderArchive } from "lucide-react";
+import { Copy, Download, Check, Loader2, ArrowLeft, RefreshCw, FolderArchive, Save, BookmarkPlus } from "lucide-react";
 import NoiseBackground from "@/components/ui/noise-background";
 import { FileTree, SkillFile } from "@/components/FileTree";
 
@@ -69,13 +70,17 @@ function generateSkillName(files: SkillFile[]): string {
 function ChatContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { user, isSignedIn } = useUser();
   const fromQuestions = searchParams.get("fromQuestions") === "true";
   const targetAgent = searchParams.get("agent") || "openclaw";
 
   const [currentFiles, setCurrentFiles] = useState<SkillFile[]>([]);
   const [skillName, setSkillName] = useState("my-skill");
+  const [skillDescription, setSkillDescription] = useState("");
   const [copied, setCopied] = useState(false);
   const [statusMessage, setStatusMessage] = useState("Generating your skill...");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
   const hasStartedRef = useRef(false);
   const descriptionRef = useRef("");
 
@@ -85,7 +90,16 @@ function ChatContent() {
     onFinish: (_prompt, completionText) => {
       const { files } = parseAIResponse(completionText);
       setCurrentFiles(files);
-      setSkillName(generateSkillName(files));
+      const name = generateSkillName(files);
+      setSkillName(name);
+      // Extract description from SKILL.md frontmatter or first paragraph
+      const skillMd = files.find(f => f.path === "SKILL.md");
+      if (skillMd) {
+        const descMatch = skillMd.content.match(/^---[\s\S]*?description:\s*(.+?)[\s\n]/m);
+        if (descMatch) {
+          setSkillDescription(descMatch[1].trim());
+        }
+      }
       setStatusMessage("Your skill is ready!");
     },
   });
@@ -164,6 +178,38 @@ function ChatContent() {
 
   const handleStartOver = () => {
     router.push("/");
+  };
+
+  const handleSaveSkill = async () => {
+    if (!isSignedIn || displayFiles.length === 0 || isSaving) return;
+    
+    setIsSaving(true);
+    try {
+      const response = await fetch('/api/skills', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: skillName,
+          description: skillDescription || descriptionRef.current,
+          files: displayFiles,
+          isPublic: false,
+        }),
+      });
+      
+      if (response.ok) {
+        setIsSaved(true);
+        setStatusMessage("Skill saved to your library!");
+      } else {
+        const data = await response.json();
+        console.error('Failed to save:', data.error);
+        setStatusMessage("Failed to save skill. Please try again.");
+      }
+    } catch (error) {
+      console.error('Error saving skill:', error);
+      setStatusMessage("Failed to save skill. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -275,6 +321,42 @@ function ChatContent() {
                   {copied ? "Copied!" : "Copy All Files"}
                 </Button>
               </div>
+            )}
+            
+            {/* Save to Library */}
+            {!isLoading && displayFiles.length > 0 && isSignedIn && (
+              <div className="mt-3">
+                <Button
+                  onClick={handleSaveSkill}
+                  disabled={isSaving || isSaved}
+                  variant="outline"
+                  className="w-full border-zinc-700 hover:bg-zinc-800 disabled:opacity-50"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : isSaved ? (
+                    <>
+                      <Check className="w-4 h-4 mr-2 text-green-400" />
+                      Saved to Library
+                    </>
+                  ) : (
+                    <>
+                      <BookmarkPlus className="w-4 h-4 mr-2" />
+                      Save to My Library
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+            
+            {/* Sign in prompt for saving */}
+            {!isLoading && displayFiles.length > 0 && !isSignedIn && (
+              <p className="mt-3 text-center text-sm text-zinc-500">
+                <a href="/sign-in" className="text-amber-500 hover:text-amber-400">Sign in</a> to save skills to your library
+              </p>
             )}
 
             {/* Instructions */}
